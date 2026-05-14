@@ -22,7 +22,9 @@ export default function RootLayout() {
   const loadProfile = useUserStore(s => s.loadProfile);
 
   useEffect(() => {
-    initDatabase().then(() => loadProfile());
+    initDatabase()
+      .then(() => loadProfile())
+      .catch((err) => console.error('Database init failed:', err));
   }, []);
 
   return (

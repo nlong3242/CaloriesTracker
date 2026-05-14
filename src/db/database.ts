@@ -10,9 +10,15 @@ export function getDatabase(): SQLite.SQLiteDatabase {
 }
 
 export async function initDatabase(): Promise<void> {
-  const database = getDatabase();
+  // On web, openDatabaseSync returns before the wa-sqlite WASM worker is
+  // ready, which causes the first getFirstSync/runSync call to throw
+  // "sync operation timeout". Opening via the async API blocks on worker
+  // initialization, after which sync methods on the returned handle work.
+  if (!db) {
+    db = await SQLite.openDatabaseAsync('calories_tracker.db');
+  }
 
-  await database.execAsync(`
+  await db.execAsync(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
 
