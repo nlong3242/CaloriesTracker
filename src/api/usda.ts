@@ -1,7 +1,7 @@
 // USDA FoodData Central API
 // Personal keys come from https://fdc.nal.usda.gov/api-key-signup.html and
 // raise the rate limit from 30/hr (shared DEMO_KEY) to 1000/hr per IP.
-import * as SecureStore from 'expo-secure-store';
+import { getSecureItem, setSecureItem, deleteSecureItem } from '../utils/secureStorage';
 
 const BASE_URL = 'https://api.nal.usda.gov/fdc/v1';
 const STORAGE_KEY = 'usda_api_key';
@@ -11,22 +11,22 @@ let cachedKey: string | null = null;
 
 async function loadKey(): Promise<string> {
   if (cachedKey !== null) return cachedKey;
-  const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+  const stored = await getSecureItem(STORAGE_KEY);
   cachedKey = stored ?? FALLBACK_KEY;
   return cachedKey;
 }
 
 export async function getUsdaApiKey(): Promise<string | null> {
-  return SecureStore.getItemAsync(STORAGE_KEY);
+  return getSecureItem(STORAGE_KEY);
 }
 
 export async function saveUsdaApiKey(key: string): Promise<void> {
-  await SecureStore.setItemAsync(STORAGE_KEY, key);
+  await setSecureItem(STORAGE_KEY, key);
   cachedKey = key;
 }
 
 export async function deleteUsdaApiKey(): Promise<void> {
-  await SecureStore.deleteItemAsync(STORAGE_KEY);
+  await deleteSecureItem(STORAGE_KEY);
   cachedKey = null;
 }
 
