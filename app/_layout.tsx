@@ -6,7 +6,18 @@ import { initDatabase } from '../src/db/database';
 import { useUserStore } from '../src/store/userStore';
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 5 * 60 * 1000 } },
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      // Don't retry on 4xx — retrying a 429 just burns more of the rate
+      // limit budget, and 400/401/404 won't succeed on retry either.
+      retry: (failureCount, error) => {
+        const status = (error as { status?: number })?.status;
+        if (typeof status === 'number' && status >= 400 && status < 500) return false;
+        return failureCount < 3;
+      },
+    },
+  },
 });
 
 const theme = {

@@ -1,6 +1,43 @@
-// USDA FoodData Central API — no key required for basic search
+// USDA FoodData Central API
+// Personal keys come from https://fdc.nal.usda.gov/api-key-signup.html and
+// raise the rate limit from 30/hr (shared DEMO_KEY) to 1000/hr per IP.
+import * as SecureStore from 'expo-secure-store';
+
 const BASE_URL = 'https://api.nal.usda.gov/fdc/v1';
-const API_KEY = 'DEMO_KEY'; // Rate: 30 req/hr. Replace with free key from https://fdc.nal.usda.gov/api-key-signup.html
+const STORAGE_KEY = 'usda_api_key';
+const FALLBACK_KEY = 'DEMO_KEY';
+
+let cachedKey: string | null = null;
+
+async function loadKey(): Promise<string> {
+  if (cachedKey !== null) return cachedKey;
+  const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+  cachedKey = stored ?? FALLBACK_KEY;
+  return cachedKey;
+}
+
+export async function getUsdaApiKey(): Promise<string | null> {
+  return SecureStore.getItemAsync(STORAGE_KEY);
+}
+
+export async function saveUsdaApiKey(key: string): Promise<void> {
+  await SecureStore.setItemAsync(STORAGE_KEY, key);
+  cachedKey = key;
+}
+
+export async function deleteUsdaApiKey(): Promise<void> {
+  await SecureStore.deleteItemAsync(STORAGE_KEY);
+  cachedKey = null;
+}
+
+export class UsdaApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+    this.name = 'UsdaApiError';
+  }
+}
 
 export interface UsdaFood {
   fdcId: number;
@@ -100,20 +137,22 @@ export function parseNutrients(nutrients: UsdaSearchResult['foodNutrients']): Pa
 }
 
 export async function searchFoods(query: string, pageSize = 25): Promise<UsdaSearchResult[]> {
+  const apiKey = await loadKey();
   const params = new URLSearchParams({
     query,
     dataType: 'Foundation,SR Legacy,Branded',
     pageSize: String(pageSize),
-    api_key: API_KEY,
+    api_key: apiKey,
   });
   const res = await fetch(`${BASE_URL}/foods/search?${params}`);
-  if (!res.ok) throw new Error(`USDA search failed: ${res.status}`);
+  if (!res.ok) throw new UsdaApiError(res.status, `USDA search failed: ${res.status}`);
   const data = await res.json();
   return data.foods ?? [];
 }
 
 export async function getFoodById(fdcId: number): Promise<UsdaFood> {
-  const res = await fetch(`${BASE_URL}/food/${fdcId}?api_key=${API_KEY}`);
-  if (!res.ok) throw new Error(`USDA food fetch failed: ${res.status}`);
+  const apiKey = await loadKey();
+  const res = await fetch(`${BASE_URL}/food/${fdcId}?api_key=${apiKey}`);
+  if (!res.ok) throw new UsdaApiError(res.status, `USDA food fetch failed: ${res.status}`);
   return res.json();
 }
