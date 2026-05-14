@@ -1,12 +1,13 @@
 {
   "name": "calories-tracker",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "main": "./index",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
