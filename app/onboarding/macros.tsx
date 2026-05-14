@@ -20,6 +20,30 @@ export default function MacrosSetup() {
   const macroCals = macroCalories(Number(protein), Number(carbs), Number(fat));
   const calDiff = Number(targetCal) - macroCals;
 
+  // Editing the calorie target re-derives the macro split via the default
+  // 30/40/30 ratio. Editing any macro rolls the calorie target up to whatever
+  // the new macros sum to, so what you see is what gets saved.
+  function onChangeCal(v: string) {
+    setTargetCal(v);
+    const n = Number(v);
+    if (n > 0) {
+      const s = suggestMacros(n);
+      setProtein(String(s.protein_g));
+      setCarbs(String(s.carbs_g));
+      setFat(String(s.fat_g));
+    }
+  }
+
+  function onChangeMacro(which: 'p' | 'c' | 'f', value: string) {
+    const p = which === 'p' ? value : protein;
+    const c = which === 'c' ? value : carbs;
+    const f = which === 'f' ? value : fat;
+    if (which === 'p') setProtein(value);
+    if (which === 'c') setCarbs(value);
+    if (which === 'f') setFat(value);
+    setTargetCal(String(macroCalories(Number(p) || 0, Number(c) || 0, Number(f) || 0)));
+  }
+
   function fillSuggested() {
     const s = suggestMacros(Number(targetCal) || tdee);
     setProtein(String(s.protein_g));
@@ -64,7 +88,7 @@ export default function MacrosSetup() {
       <TextInput
         label="Daily Calorie Target"
         value={targetCal}
-        onChangeText={setTargetCal}
+        onChangeText={onChangeCal}
         keyboardType="numeric"
         mode="outlined"
         style={styles.input}
@@ -82,7 +106,7 @@ export default function MacrosSetup() {
           <TextInput
             label="Protein"
             value={protein}
-            onChangeText={setProtein}
+            onChangeText={v => onChangeMacro('p', v)}
             keyboardType="numeric"
             mode="outlined"
             right={<TextInput.Affix text="g" />}
@@ -94,7 +118,7 @@ export default function MacrosSetup() {
           <TextInput
             label="Carbs"
             value={carbs}
-            onChangeText={setCarbs}
+            onChangeText={v => onChangeMacro('c', v)}
             keyboardType="numeric"
             mode="outlined"
             right={<TextInput.Affix text="g" />}
@@ -106,7 +130,7 @@ export default function MacrosSetup() {
           <TextInput
             label="Fat"
             value={fat}
-            onChangeText={setFat}
+            onChangeText={v => onChangeMacro('f', v)}
             keyboardType="numeric"
             mode="outlined"
             right={<TextInput.Affix text="g" />}

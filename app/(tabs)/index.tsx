@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  RefreshControl, Alert
+  RefreshControl, Alert, Platform
 } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
 import { FAB } from 'react-native-paper';
@@ -39,6 +39,15 @@ export default function DiaryScreen() {
   const calRemaining = targetCal - Math.round(totals.calories);
 
   function confirmDelete(entry: DiaryEntry) {
+    // Alert.alert with multi-button arrays doesn't reliably fire the
+    // destructive callback on react-native-web — fall back to window.confirm.
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`Remove ${entry.food_name}?`)) {
+        deleteDiaryEntry(entry.id);
+        load();
+      }
+      return;
+    }
     Alert.alert('Remove entry', `Remove ${entry.food_name}?`, [
       { text: 'Cancel', style: 'cancel' },
       {

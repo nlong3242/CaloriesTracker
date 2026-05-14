@@ -35,9 +35,10 @@ export interface UsdaSearchResult {
   }>;
 }
 
-// USDA nutrient IDs we care about
-const NUTRIENT_MAP: Record<number, string> = {
-  1008: 'calories',
+// USDA nutrient IDs we care about. Energy is handled separately because USDA
+// uses multiple IDs depending on the food's data type (Foundation vs Branded
+// vs SR Legacy), and some entries only carry one of them.
+const NUTRIENT_MAP: Record<number, Exclude<keyof ParsedNutrients, 'calories'>> = {
   1003: 'protein_g',
   1005: 'carbs_g',
   1004: 'fat_g',
@@ -53,6 +54,9 @@ const NUTRIENT_MAP: Record<number, string> = {
   1089: 'iron_mg',
   1092: 'potassium_mg',
 };
+
+// Priority order: prefer reported calories, then Atwater General, then Atwater Specific.
+const CALORIE_NUTRIENT_IDS = [1008, 2047, 2048];
 
 export interface ParsedNutrients {
   calories: number;
@@ -84,6 +88,13 @@ export function parseNutrients(nutrients: UsdaSearchResult['foodNutrients']): Pa
     if (key) {
       (result as unknown as Record<string, number>)[key] = n.value ?? 0;
     }
+  }
+  for (const id of CALORIE_NUTRIENT_IDS) {
+    const found = nutrients.find(n => n.nutrientId === id);
+    if (found?.value) { result.calories = found.value; break; }
+  }
+  if (!result.calories && (result.protein_g || result.carbs_g || result.fat_g)) {
+    result.calories = Math.round(result.protein_g * 4 + result.carbs_g * 4 + result.fat_g * 9);
   }
   return result;
 }
