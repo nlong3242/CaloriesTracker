@@ -1,18 +1,18 @@
 import Anthropic from '@anthropic-ai/sdk';
-import * as SecureStore from 'expo-secure-store';
+import { getSecureItem, setSecureItem, deleteSecureItem } from '../utils/secureStorage';
 
 const API_KEY_STORAGE_KEY = 'anthropic_api_key';
 
 export async function getApiKey(): Promise<string | null> {
-  return SecureStore.getItemAsync(API_KEY_STORAGE_KEY);
+  return getSecureItem(API_KEY_STORAGE_KEY);
 }
 
 export async function saveApiKey(key: string): Promise<void> {
-  await SecureStore.setItemAsync(API_KEY_STORAGE_KEY, key);
+  await setSecureItem(API_KEY_STORAGE_KEY, key);
 }
 
 export async function deleteApiKey(): Promise<void> {
-  await SecureStore.deleteItemAsync(API_KEY_STORAGE_KEY);
+  await deleteSecureItem(API_KEY_STORAGE_KEY);
 }
 
 function getClient(apiKey: string): Anthropic {
